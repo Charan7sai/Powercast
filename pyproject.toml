@@ -1,0 +1,24 @@
+[project]
+name = "powercast"
+version = "0.1.0"
+description = "Day-ahead power price forecasting with calibrated uncertainty and a battery-trading backtest"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0", "numpy", "pyarrow", "requests", "holidays", "lightgbm>=4.0", "scikit-learn",
+    "scipy", "matplotlib", "shap", "fastapi", "uvicorn", "streamlit", "plotly",
+]
+
+[project.optional-dependencies]
+entsoe = ["entsoe-py"]
+dev = ["pytest", "httpx"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

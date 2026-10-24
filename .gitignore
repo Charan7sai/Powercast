@@ -1,0 +1,9 @@
+data/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+mlruns/
+*.egg-info/
+.claude/
+reports/*.log
