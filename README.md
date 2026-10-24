@@ -2,6 +2,8 @@
 
 **Day-ahead electricity price forecasts for NL, DE-LU and FR with calibrated uncertainty, and proof that they are worth money.**
 
+**Live dashboard: [powercast-price-trading.streamlit.app](https://powercast-price-trading.streamlit.app/)**
+
 > On 663 out-of-sample days (Jan 2025 to Oct 2026), quantile LightGBM reaches **rMAE 0.571** vs the naive benchmark and **beats the LEAR benchmark by 5.5% MAE** (Diebold-Mariano p < 0.001 for NL and DE-LU, p = 0.02 for FR). Conformal calibration brings the 80% interval coverage from 60% to **79.8%**, and a battery trading on the median forecast captures **93.9% of perfect-foresight profit** vs 88.5% on the naive forecast.
 
 ![one test week](reports/figures/fan_week.png)
