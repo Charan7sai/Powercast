@@ -23,12 +23,19 @@ def fetch_prices(zone: str, start: str, end: str) -> pd.DataFrame:
         chunk_end = min(chunk_start + pd.offsets.YearEnd(0), pd.Timestamp(end))
         params = {"bzn": zone, "start": chunk_start.strftime("%Y-%m-%d"),
                   "end": chunk_end.strftime("%Y-%m-%d")}
+        r, err = None, None
         for attempt in range(6):
-            r = requests.get(URL, params=params, timeout=120)
-            if r.status_code == 200:
-                break
+            try:
+                r = requests.get(URL, params=params, timeout=120)
+                if r.status_code == 200:
+                    break
+                err = f"HTTP {r.status_code}: {r.text[:300]}"
+            except requests.RequestException as e:
+                err = repr(e)
+            print(f"  energy-charts {zone} attempt {attempt + 1} failed ({err})", flush=True)
             time.sleep(10 * 2 ** attempt)
-        r.raise_for_status()
+        else:
+            raise RuntimeError(f"Energy-Charts request failed after retries: {err}")
         time.sleep(2)
         js = r.json()
         if not js.get("unix_seconds"):

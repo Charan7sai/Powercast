@@ -26,6 +26,16 @@ def available() -> bool:
 def update_fundamentals(zone: str, start: str, end: str) -> pd.DataFrame | None:
     if not available():
         return None
+    # Fundamentals are optional: a bad token or an ENTSO-E outage must not kill the daily forecast.
+    try:
+        return _fetch(zone, start, end)
+    except Exception as e:
+        msg = repr(e).replace(os.environ["ENTSOE_API_KEY"], "***")
+        print(f"  ENTSO-E {zone} skipped: {msg}", flush=True)
+        return None
+
+
+def _fetch(zone: str, start: str, end: str) -> pd.DataFrame:
     from entsoe import EntsoePandasClient
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_API_KEY"])
