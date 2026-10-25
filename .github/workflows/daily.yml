@@ -11,6 +11,8 @@ permissions:
 jobs:
   forecast:
     runs-on: ubuntu-latest
+    # A cold ingest with API retries takes ~45 min; anything longer is stuck, not slow.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
