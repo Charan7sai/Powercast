@@ -16,12 +16,18 @@ LIVE_URL = "https://api.open-meteo.com/v1/forecast"
 
 
 def _get(url: str, params: dict) -> dict:
+    err = None
     for attempt in range(5):
-        r = requests.get(url, params=params, timeout=120)
-        if r.status_code == 200:
-            return r.json()
+        try:
+            r = requests.get(url, params=params, timeout=120)
+            if r.status_code == 200:
+                return r.json()
+            err = f"HTTP {r.status_code}: {r.text[:300]}"
+        except requests.RequestException as e:
+            err = repr(e)
+        print(f"  open-meteo attempt {attempt + 1} failed ({err})", flush=True)
         time.sleep(5 * 2 ** attempt)
-    r.raise_for_status()
+    raise RuntimeError(f"Open-Meteo request failed after retries: {err}")
 
 
 def _to_frame(js: dict) -> pd.DataFrame:
@@ -33,7 +39,9 @@ def _to_frame(js: dict) -> pd.DataFrame:
 
 def fetch_point(lat: float, lon: float, start: str, end: str) -> pd.DataFrame:
     frames = []
-    for y0 in pd.date_range(start, end, freq="YS"):
+    # Anchor on the start's year so an incremental start mid-year still yields a chunk.
+    for y0 in pd.date_range(pd.Timestamp(start).to_period("Y").start_time, end, freq="YS"):
+        y0 = max(y0, pd.Timestamp(start))
         y1 = min(y0 + pd.offsets.YearEnd(0), pd.Timestamp(end))
         js = _get(HIST_URL, {"latitude": lat, "longitude": lon, "hourly": ",".join(WEATHER_VARS),
                              "start_date": y0.strftime("%Y-%m-%d"), "end_date": y1.strftime("%Y-%m-%d"),
