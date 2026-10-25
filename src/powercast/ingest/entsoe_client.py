@@ -27,12 +27,20 @@ def update_fundamentals(zone: str, start: str, end: str) -> pd.DataFrame | None:
     if not available():
         return None
     # Fundamentals are optional: a bad token or an ENTSO-E outage must not kill the daily forecast.
+    path = RAW / f"fundamentals_{zone}.parquet"
+    old = pd.read_parquet(path) if path.exists() else None
+    if old is not None:
+        # Refetch the last week to pick up revised forecasts; never re-download full history.
+        start = max(pd.Timestamp(start), old.index.max().tz_convert(None) - pd.Timedelta(days=7)).strftime("%Y-%m-%d")
     try:
-        return _fetch(zone, start, end)
+        new = _fetch(zone, start, end)
     except Exception as e:
         msg = repr(e).replace(os.environ["ENTSOE_API_KEY"], "***")
         print(f"  ENTSO-E {zone} skipped: {msg}", flush=True)
         return None
+    df = new if old is None else pd.concat([old[old.index < new.index.min()], new])
+    df.to_parquet(path)
+    return df
 
 
 def _fetch(zone: str, start: str, end: str) -> pd.DataFrame:
@@ -50,5 +58,4 @@ def _fetch(zone: str, start: str, end: str) -> pd.DataFrame:
     df = df.tz_convert("UTC").resample("1h").mean()
     df["residual_load_fc"] = df["load_fc"] - df["wind_fc"] - df["solar_fc"]
     df.index.name = "ts_utc"
-    df.to_parquet(RAW / f"fundamentals_{zone}.parquet")
     return df
